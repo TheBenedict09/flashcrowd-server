@@ -18,6 +18,7 @@ since = datetime.fromisoformat(a.since.replace("Z","+00:00")).timestamp() if a.s
 # SKIP out-of-range events and only stop after STOP_AFTER consecutive events past --until.
 STOP_AFTER = 50_000
 past = 0
+last_ts = {}   # per data-centre topic: newest event timestamp seen (resume point after a disconnect)
 
 def row(c):
     ln = c.get("length") or {}
@@ -29,7 +30,9 @@ def row(c):
             "comment": (c.get("comment") or "")[:300]}
 
 while True:
-    if a.since: url = url.split("?")[0] + f"?since={a.since}"   # reconnects restart the window (dupes removed in Snowflake)
+    if a.since:   # resume from the oldest topic position reached so far (no lost data; small overlap removed by EDITS_CLEAN)
+        resume = datetime.fromtimestamp(min(last_ts.values()), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if last_ts else a.since
+        url = url.split("?")[0] + f"?since={resume}"
     try:
         with EventSource(url, headers=UA, timeout=60) as stream, open(a.out, "a") as out:
             for ev in stream:
@@ -38,6 +41,8 @@ while True:
                 except ValueError: continue
                 if c.get("meta", {}).get("domain") == "canary": continue
                 ts = c.get("timestamp", 0)
+                topic = c.get("meta", {}).get("topic", "")
+                if ts and ts > last_ts.get(topic, 0): last_ts[topic] = ts
                 if until and ts > until:
                     past += 1
                     if past >= STOP_AFTER: sys.exit(0)
@@ -51,4 +56,4 @@ while True:
     except SystemExit:
         raise
     except Exception as e:
-        print("reconnect:", e, file=sys.stderr); time.sleep(5)
+        print("reconnect:", e, file=sys.stderr); time.sleep(60 if "429" in str(e) else 5)
