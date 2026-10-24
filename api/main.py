@@ -388,11 +388,11 @@ async def _gemini(prompt: str, schema: dict) -> dict | None:
     key = os.getenv("GEMINI_API_KEY", "")
     if not key or key == "...":
         return None
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
     body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema, "temperature": 1.0}}
     try:
-        async with httpx.AsyncClient(timeout=9) as c:
+        async with httpx.AsyncClient(timeout=25) as c:
             r = await c.post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": key}, json=body)
         if r.status_code != 200:
             print("gemini", r.status_code, r.text[:200]); return None
@@ -416,29 +416,68 @@ def _clean_items(items, funny: bool):
     return out
 
 
+GAME_POOL: dict = {}          # (mode, level) -> list of recent Gemini batches
+GAME_WARM = {"running": False, "last": 0.0}
+
+
+async def _generate(mode: str, level: int):
+    n = 24 if mode == "defend" else 18
+    fmt_args = dict(n=n, level=level, difficulty="any", seed=_random.randint(1, 10**6), **GAME_CITIES)
+    prompt = (_DEFEND_PROMPT if mode == "defend" else _ATTACK_PROMPT).format(**fmt_args)
+    res = await _gemini(prompt, _schema(mode == "defend"))
+    if not res:
+        return None
+    items = _clean_items(res.get("items"), funny=(mode == "attack"))
+    if len(items) < 6:
+        return None
+    out = {"source": "gemini", "items": items}
+    if mode == "defend" and isinstance(res.get("boss"), dict) and res["boss"].get("name"):
+        out["boss"] = {"name": str(res["boss"]["name"]).upper()[:32], "emoji": str(res["boss"].get("emoji") or "👾")[:4]}
+    return out
+
+
+async def _warm_pool():
+    """Pre-generate headline batches in the background so the game never waits on Gemini."""
+    if GAME_WARM["running"]:
+        return
+    GAME_WARM["running"] = True
+    try:
+        for mode in ("defend", "attack"):
+            for level in range(1, 6):
+                batch = await _generate(mode, level)
+                if batch:
+                    pool = GAME_POOL.setdefault((mode, level), [])
+                    pool.append(batch)
+                    del pool[:-3]
+        GAME_WARM["last"] = time.time()
+    finally:
+        GAME_WARM["running"] = False
+
+
+async def _warm_loop():
+    while True:
+        try:
+            await _warm_pool()
+        except Exception as e:
+            print("warm error:", e)
+        await asyncio.sleep(600)
+
+
+@app.on_event("startup")
+async def _start_warm():
+    if os.getenv("GEMINI_API_KEY"):
+        asyncio.create_task(_warm_loop())
+
+
 @app.get("/api/game/events")
 async def game_events(mode: str = Query("defend"), level: int = Query(1, ge=1, le=5), difficulty: str = Query("normal")):
     mode = "attack" if mode == "attack" else "defend"
-    slot = int(time.time() // 600)                                  # fresh batch every 10 minutes
-    key = (mode, level, difficulty, slot, _random.randint(0, 2))    # up to 3 variants per slot
-    hit = GAME_CACHE.get(key)
-    if hit:
-        return hit
-    n = 24 if mode == "defend" else 18
-    fmt_args = dict(n=n, level=level, difficulty=difficulty, seed=_random.randint(1, 10**6), **GAME_CITIES)
-    prompt = (_DEFEND_PROMPT if mode == "defend" else _ATTACK_PROMPT).format(**fmt_args)
-    res = await _gemini(prompt, _schema(mode == "defend"))
-    if res:
-        items = _clean_items(res.get("items"), funny=(mode == "attack"))
-        if len(items) >= 6:
-            out = {"source": "gemini", "items": items}
-            if mode == "defend" and isinstance(res.get("boss"), dict) and res["boss"].get("name"):
-                out["boss"] = {"name": str(res["boss"]["name"]).upper()[:32], "emoji": str(res["boss"].get("emoji") or "👾")[:4]}
-            if len(GAME_CACHE) > 200:
-                GAME_CACHE.clear()
-            GAME_CACHE[key] = out
-            return out
-    return {"source": "unavailable", "items": []}                   # client uses its curated real-news pool
+    pool = GAME_POOL.get((mode, level))
+    if pool:
+        b = _random.choice(pool)
+        items = list(b["items"]); _random.shuffle(items)
+        return {**b, "items": items}
+    return {"source": "warming", "items": []}                       # client uses its curated real-news pool
 
 
 BASELINE: dict = {}
