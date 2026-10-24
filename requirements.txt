@@ -1,6 +1,7 @@
 requests
 requests-sse
 snowflake-connector-python[pandas]
+cryptography
 pandas
 fastapi
 uvicorn[standard]
