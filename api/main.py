@@ -1,8 +1,9 @@
 """FLASHCROWD API (CONTRACTS.md §3.5).
 
-MOCK=1 (default for now): every route answers from api/mocks/ (PC2's levels.json + ticks.jsonl, plus
-contract-shaped placeholders). Real sessions (flashcrowd_engine + Snowflake) replace the mock pieces in P2
-without changing any route or JSON shape.
+Game sessions are REAL: PC3's flashcrowd_engine.GameSession over level packages in api/levels/ (real Wikipedia
+demand + PC1's measured constants, built by api/build_levels.py). GET /levels serves api/levels.json.
+PC2's synthetic level id (api/mocks/) still works for UI testing but is not listed.
+Live endpoints read Snowflake (FORECASTS, scorecard job output) and fall back to api/mocks/ when empty.
 
 Run: uvicorn api.main:app --host 127.0.0.1 --port 8000
 """
@@ -13,10 +14,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
+from flashcrowd_engine import GameSession
+
 CONTRACTS_VERSION = "1.1"
 ROOT = pathlib.Path(__file__).resolve().parent
 MOCKS = ROOT / "mocks"
-MOCK = os.getenv("MOCK", "1") == "1"
+LEVELS_DIR = ROOT / "levels"
+MOCK_LEVEL = "oct-19-evening"          # PC2's synthetic replay, kept for UI testing
+MOCK = False
 REGIONS = {"LDN", "NJ", "TYO"}
 CACHE = pathlib.Path(os.getenv("FC_TTS_CACHE", "/tmp/fc_tts_cache"))
 
@@ -54,11 +59,21 @@ class Session:
         self.id = secrets.token_urlsafe(8)
         self.level_id, self.speed = level_id, max(1, min(int(speed), 600))
         self.paused, self.m = False, 0
-        self.actions: list[dict] = []          # queued for the next tick (applied by the real sim in P2)
+        self.game: GameSession | None = None   # None = PC2's mock replay
+        self.streaming = False                 # one WebSocket drives the clock at a time
+        self.done = False
         self.created = time.time()
+        if level_id != MOCK_LEVEL:
+            self.game = GameSession.from_level_file(LEVELS_DIR / f"{level_id}.json", session_id=self.id)
 
 
 SESSIONS: dict[str, Session] = {}
+LAST_GAME: list = [None]                       # latest real session, for /agent/reasons
+
+
+def levels_index():
+    f = ROOT / "levels.json"
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else mock("levels.json")
 
 
 def get_session(sid) -> Session:
@@ -96,30 +111,32 @@ def health():
 
 @app.get("/api/levels")
 def levels():
-    return mock("levels.json")
+    return levels_index()
 
 
 @app.post("/api/sessions")
 def create_session(body: NewSession):
-    lv = next((l for l in mock("levels.json") if l["id"] == body.level_id), None)
-    if not lv:
+    if body.level_id == MOCK_LEVEL:
+        s = Session(body.level_id, body.speed); SESSIONS[s.id] = s
+        lv = mock("levels.json")[0]
+        return {**mock("session.json"), "session_id": s.id, "start": lv["start"]}
+    if not (LEVELS_DIR / f"{body.level_id}.json").exists():
         raise ApiError(404, "level_not_found", f"No level '{body.level_id}'.")
     s = Session(body.level_id, body.speed); SESSIONS[s.id] = s
-    base = mock("session.json")
-    return {**base, "session_id": s.id, "start": lv["start"]}
+    LAST_GAME[0] = s.game
+    return s.game.info()
 
 
 @app.post("/api/sessions/{sid}/action")
 def action(sid: str, a: Action):
     s = get_session(sid)
-    if a.type != "scale":
-        return {"ok": False, "error": "unknown_action"}
     if a.region not in REGIONS:
         return {"ok": False, "error": "bad_region"}
     if not -5 <= a.delta <= 5 or a.delta == 0:
         return {"ok": False, "error": "bad_delta"}
-    s.actions.append(a.model_dump())
-    return {"ok": True}
+    if s.game is None:
+        return {"ok": True} if a.type == "scale" else {"ok": False, "error": "unknown_action"}
+    return s.game.action(a.model_dump())      # queued; applied on the next sim minute (engine validates min_servers etc.)
 
 
 @app.post("/api/sessions/{sid}/control")
@@ -138,8 +155,22 @@ def control(sid: str, c: Control):
 
 @app.get("/api/sessions/{sid}/review")
 def review(sid: str):
-    get_session(sid)
-    return mock("review.json")
+    s = get_session(sid)
+    if s.game is None:
+        return mock("review.json")
+    if not s.done:
+        raise ApiError(409, "session_not_finished", "The review is available once the shift has ended.")
+    return s.game.review()
+
+
+def next_message(s: Session) -> dict:
+    if s.game is None:
+        if s.m < len(TICKS):
+            msg = TICKS[s.m]; s.m += 1; return msg
+        return {"type": "end", "review_url": f"/api/sessions/{s.id}/review"}
+    msg = s.game.tick()                                         # advances every player one sim minute
+    s.m += 1
+    return msg
 
 
 @app.websocket("/api/sessions/{sid}/stream")
@@ -148,18 +179,26 @@ async def stream(ws: WebSocket, sid: str):
     s = SESSIONS.get(sid)
     if not s:
         await ws.send_json({"type": "error", "message": f"No session '{sid}'."}); await ws.close(); return
+    if s.streaming:
+        await ws.send_json({"type": "error", "message": "This session is already streaming in another connection."})
+        await ws.close(); return
+    s.streaming = True
     try:
-        while s.m < len(TICKS):
+        while not s.done:
             if s.paused:
                 await asyncio.sleep(0.1); continue
-            s.actions.clear()                                   # mock mode: actions accepted but not simulated
-            await ws.send_text(json.dumps(TICKS[s.m], ensure_ascii=False))
-            s.m += 1
-            await asyncio.sleep(1 / s.speed)                    # speed = sim minutes per real second
-        await ws.send_json({"type": "end", "review_url": f"/api/sessions/{sid}/review"})
+            msg = next_message(s)
+            if msg.get("type") == "end":
+                s.done = True
+                msg = {**msg, "review_url": f"/api/sessions/{sid}/review"}
+            await ws.send_text(json.dumps(msg, ensure_ascii=False))
+            if not s.done:
+                await asyncio.sleep(1 / s.speed)                # speed = sim minutes per real second
         await ws.close()
     except WebSocketDisconnect:
-        pass                                                    # reconnect resumes from s.m
+        pass                                                    # reconnect resumes from the current minute
+    finally:
+        s.streaming = False
 
 
 @app.get("/api/live/forecasts")
@@ -176,6 +215,8 @@ def live_scorecard():
 def agent_reasons(region: str = Query(...)):
     if region not in REGIONS:
         raise ApiError(400, "bad_region", "region must be LDN, NJ or TYO")
+    if LAST_GAME[0] is not None:
+        return LAST_GAME[0].reasons(region)              # the autopilot's latest decision in the newest real session
     r = mock("reasons.json")
     return {**r, "region": region}
 

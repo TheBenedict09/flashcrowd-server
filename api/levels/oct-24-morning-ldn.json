@@ -1,0 +1,258 @@
+{
+ "level": {
+  "id": "oct-24-morning-ldn",
+  "title": "Kehlsteinhaus surge in London",
+  "start": "2026-10-24T06:00:00Z",
+  "hours": 6,
+  "note": "REAL Wikipedia demand (dewiki 'Kehlsteinhaus': peak 10,563 views/h vs 0 a day earlier). Servers needed jump 2.33x at 08:00 UTC. Measured B and C. persistence region forecasts (PC3 live forecasts not yet available for this window).",
+  "surge_ratio": 1.5,
+  "surge_min_jump": 1
+ },
+ "constants": {
+  "C": 253.8195,
+  "B": {
+   "LDN": 1,
+   "NJ": 1,
+   "TYO": 2
+  },
+  "SCALE": 7.960655313705631,
+  "MIN_SERVERS": 1,
+  "MAX_SERVERS": 40,
+  "TARGET_UTIL": 0.8
+ },
+ "scheduled": {
+  "LDN": [
+   5,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   5,
+   5,
+   5,
+   5,
+   5,
+   6,
+   6,
+   6,
+   7,
+   7,
+   7,
+   9,
+   11,
+   13,
+   13,
+   10,
+   7
+  ],
+  "NJ": [
+   5,
+   6,
+   6,
+   6,
+   5,
+   4,
+   4,
+   4,
+   3,
+   4,
+   4,
+   4,
+   4,
+   5,
+   5,
+   5,
+   5,
+   6,
+   8,
+   7,
+   7,
+   7,
+   6,
+   6
+  ],
+  "TYO": [
+   5,
+   5,
+   4,
+   4,
+   5,
+   5,
+   4,
+   4,
+   4,
+   4,
+   4,
+   5,
+   8,
+   6,
+   7,
+   5,
+   4,
+   3,
+   4,
+   3,
+   3,
+   3,
+   3,
+   4
+  ]
+ },
+ "region_forecasts": [
+  {
+   "issued_at": "2026-10-24T03:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T06:00:00Z",
+   "q50_views": 300070.85,
+   "q90_views": 390092.105
+  },
+  {
+   "issued_at": "2026-10-24T04:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T07:00:00Z",
+   "q50_views": 346408.05,
+   "q90_views": 450330.465
+  },
+  {
+   "issued_at": "2026-10-24T05:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T08:00:00Z",
+   "q50_views": 370501.6,
+   "q90_views": 481652.07999999996
+  },
+  {
+   "issued_at": "2026-10-24T06:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T09:00:00Z",
+   "q50_views": 364874.75,
+   "q90_views": 474337.175
+  },
+  {
+   "issued_at": "2026-10-24T07:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T10:00:00Z",
+   "q50_views": 352067.35,
+   "q90_views": 457687.555
+  },
+  {
+   "issued_at": "2026-10-24T08:00:00Z",
+   "region": "LDN",
+   "target_hour": "2026-10-24T11:00:00Z",
+   "q50_views": 383868.0,
+   "q90_views": 499028.4
+  },
+  {
+   "issued_at": "2026-10-24T03:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T06:00:00Z",
+   "q50_views": 253760.95,
+   "q90_views": 329889.23500000004
+  },
+  {
+   "issued_at": "2026-10-24T04:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T07:00:00Z",
+   "q50_views": 242833.35,
+   "q90_views": 315683.35500000004
+  },
+  {
+   "issued_at": "2026-10-24T05:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T08:00:00Z",
+   "q50_views": 237793.2,
+   "q90_views": 309131.16000000003
+  },
+  {
+   "issued_at": "2026-10-24T06:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T09:00:00Z",
+   "q50_views": 244322.25,
+   "q90_views": 317618.925
+  },
+  {
+   "issued_at": "2026-10-24T07:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T10:00:00Z",
+   "q50_views": 248458.45,
+   "q90_views": 322995.98500000004
+  },
+  {
+   "issued_at": "2026-10-24T08:00:00Z",
+   "region": "NJ",
+   "target_hour": "2026-10-24T11:00:00Z",
+   "q50_views": 281762.0,
+   "q90_views": 366290.60000000003
+  },
+  {
+   "issued_at": "2026-10-24T03:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T06:00:00Z",
+   "q50_views": 339485.2,
+   "q90_views": 441330.76
+  },
+  {
+   "issued_at": "2026-10-24T04:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T07:00:00Z",
+   "q50_views": 354832.6,
+   "q90_views": 461282.38
+  },
+  {
+   "issued_at": "2026-10-24T05:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T08:00:00Z",
+   "q50_views": 302230.2,
+   "q90_views": 392899.26
+  },
+  {
+   "issued_at": "2026-10-24T06:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T09:00:00Z",
+   "q50_views": 321713.0,
+   "q90_views": 418226.9
+  },
+  {
+   "issued_at": "2026-10-24T07:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T10:00:00Z",
+   "q50_views": 308907.2,
+   "q90_views": 401579.36000000004
+  },
+  {
+   "issued_at": "2026-10-24T08:00:00Z",
+   "region": "TYO",
+   "target_hour": "2026-10-24T11:00:00Z",
+   "q50_views": 443241.0,
+   "q90_views": 576213.3
+  }
+ ],
+ "article_forecasts": [],
+ "hourly_views": {
+  "LDN": [
+   274428.6,
+   511871.4,
+   594548.7,
+   602465.7,
+   582644.1,
+   648269.3
+  ],
+  "NJ": [
+   249405.2,
+   338177.8,
+   344626.9,
+   352951.9,
+   357276.7,
+   382005.10000000003
+  ],
+  "TYO": [
+   286051.2,
+   416700.8,
+   474752.4,
+   499112.4,
+   569121.2,
+   677013.6
+  ]
+ }
+}

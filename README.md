@@ -28,7 +28,11 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 | Capacity C (req/s) | 254 (t3.micro, nginx static 558 KB page, p95<200 ms; network-bound — see infra/loadtest.md) |
 | RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | 75.5 / 147.7 / 215.3 (TCP connect, first medians; probes run all weekend) |
 
-## API (live, mock mode)
+## API (live)
+- **Game sessions are real**: PC3's `flashcrowd_engine.GameSession` (v0.3) over `api/levels/*.json`, built by `api/build_levels.py` from Snowflake (real page views of tracked articles, measured B/C, SCALE via `calibrate_scale`). Rebuild: `python api/build_levels.py --n 3` then restart `api`.
+- Boss levels: `oct-24-morning-ldn` (Kehlsteinhaus), `oct-18-morning-tyo` (藤咲碧羽), `oct-21-morning-nj` (PHP2Shell).
+
+## API (mock pieces)
 - Base URL for PC2: **`http://18.132.176.215/api`** — WS: `ws://18.132.176.215/api/sessions/{id}/stream`
 - `MOCK=1` serves `api/mocks/` (PC2's `levels.json` + `ticks.jsonl`; the other 5 are contract-shaped placeholders). Smoke test: `python scripts/api_smoke_test.py`
 - nginx: `/` → `/var/www/flashcrowd` (frontend), `/api` + WS → uvicorn :8000, rate limit 20 r/s per IP.

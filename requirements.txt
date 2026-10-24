@@ -9,5 +9,6 @@ websockets
 python-dotenv
 httpx
 boto3
-# flashcrowd_engine from PC3 (pin to a tag once engine-v0.1 exists):
-# flashcrowd_engine @ git+https://github.com/<ORG>/flashcrowd-model.git@engine-v0.1
+# PC3's engine (v0.3): until PC3 pushes src/ + tag engine-v0.3, install from a local copy:
+#   pip install -e ../flashcrowd-model
+# then: flashcrowd-model @ git+https://github.com/arkeshbora1-hue/flashcrowd-model.git@engine-v0.3
