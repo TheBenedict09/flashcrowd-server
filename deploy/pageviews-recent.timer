@@ -1,0 +1,7 @@
+[Unit]
+Description=Fetch new page-view hours every 15 minutes
+[Timer]
+OnCalendar=*:05,20,35,50
+Persistent=true
+[Install]
+WantedBy=timers.target

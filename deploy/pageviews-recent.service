@@ -1,0 +1,9 @@
+[Unit]
+Description=FLASHCROWD fetch newly published page-view hours
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+Environment=FC_DATA=/home/ubuntu/data
+ExecStart=/home/ubuntu/venv/bin/python -W ignore pipeline/pageviews_loader.py --recent 8 --workers 1
