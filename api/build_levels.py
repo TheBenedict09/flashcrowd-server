@@ -95,10 +95,12 @@ def main():
             cands.append((jump, need[r][i] - base, r, i))
     cands.sort(reverse=True)
     picked = []
-    for jump, plus, r, i in cands:          # one per region first, no overlapping windows in the same region
+    # Every game simulates all three regions, so two levels must never share hours (whatever their headline region).
+    # One level per region first, then the next biggest jumps.
+    for jump, plus, r, i in cands:
         if len(picked) >= a.n: break
         if any(p[2] == r for p in picked) and len({p[2] for p in picked}) < len(REGIONS): continue
-        if any(p[2] == r and abs(p[3] - i) < a.hours for p in picked): continue
+        if any(abs(p[3] - i) < a.hours for p in picked): continue
         picked.append((jump, plus, r, i))
     OUT.mkdir(parents=True, exist_ok=True)
     index = []
