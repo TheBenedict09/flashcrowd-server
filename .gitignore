@@ -1,0 +1,12 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+data/
+*.jsonl
+*.csv.gz
+*.offset
+.DS_Store
+.idea/
+.vscode/

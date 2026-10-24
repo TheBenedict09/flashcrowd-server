@@ -1,0 +1,3 @@
+#cloud-config
+# TODO (PC1): install nginx + ~200 article HTMLs + /wiki/healthz.html (roadmap §6 D1)
+packages: [nginx]

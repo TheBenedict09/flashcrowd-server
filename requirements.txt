@@ -1,0 +1,11 @@
+requests
+requests-sse
+snowflake-connector-python[pandas]
+pandas
+fastapi
+uvicorn[standard]
+websockets
+python-dotenv
+httpx
+# flashcrowd_engine from PC3 (pin to a tag once engine-v0.1 exists):
+# flashcrowd_engine @ git+https://github.com/<ORG>/flashcrowd-model.git@engine-v0.1
