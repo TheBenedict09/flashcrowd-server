@@ -160,7 +160,66 @@ def review(sid: str):
         return mock("review.json")
     if not s.done:
         raise ApiError(409, "session_not_finished", "The review is available once the shift has ended.")
-    return s.game.review()
+    return clean_review(s.game.review())
+
+
+CAUSES = {"breaking_news", "death", "sports", "scheduled_event", "entertainment", "vandalism", "edit_war",
+          "bot_maintenance", "other"}
+
+
+def clean_forecast(f: dict) -> dict:
+    """Make an article forecast satisfy CONTRACTS §3.4 exactly (PC2 validates it):
+    cause must be in the enum (PC3's model writes null until the Gemini labeller runs -> "other"),
+    size_q90 >= size_q50, top_reasons = non-empty strings, issued_at ends in Z."""
+    f = dict(f)
+    if f.get("cause") not in CAUSES:
+        f["cause"] = "other"
+    q50 = max(0.0, float(f.get("size_q50") or 0)); q90 = max(q50, float(f.get("size_q90") or 0))
+    f["size_q50"], f["size_q90"] = q50, q90
+    f["p_surge"] = min(1.0, max(0.0, float(f.get("p_surge") or 0)))
+    f["top_reasons"] = [str(r) for r in (f.get("top_reasons") or []) if str(r).strip()]
+    ia = str(f.get("issued_at", ""))
+    if ia and not ia.endswith("Z"):
+        f["issued_at"] = ia.replace(" ", "T").split("+")[0] + "Z"
+    return f
+
+
+def clean_score(v: dict) -> dict:
+    """Engine floats can give served_pct = 100.00000000000001; PC2 (rightly) rejects > 100."""
+    v = dict(v)
+    if "served_pct" in v:
+        v["served_pct"] = round(min(100.0, max(0.0, float(v["served_pct"]))), 3)
+    if "server_hours" in v:
+        v["server_hours"] = round(max(0.0, float(v["server_hours"])), 3)
+    if "breach_minutes" in v:
+        v["breach_minutes"] = int(v["breach_minutes"])
+    return v
+
+
+def clean_tick(msg: dict) -> dict:
+    msg = {**msg, "players": {p: clean_score(v) for p, v in msg.get("players", {}).items()}}
+    if msg.get("radar"):
+        msg["radar"] = [clean_forecast(f) for f in msg["radar"]]
+    return msg
+
+
+def clean_review(rv: dict) -> dict:
+    """Scores clamped; surge rows kept only when they match CONTRACTS §3.5 (an onset time and both you + autopilot).
+    PC3's engine also emits 'No surge' rows with onset=null for overspend; those go to `overspend` instead."""
+    rv = {k: (clean_score(v) if k in ("you", "autopilot", "reactive", "scheduled") else v) for k, v in rv.items()}
+    keep, extra = [], []
+    for sg in rv.get("surges", []):
+        ok = sg.get("onset") and all(isinstance(sg.get(p), dict) and "verdict" in sg[p] for p in ("you", "autopilot"))
+        if ok:
+            sg = dict(sg)
+            for p in ("you", "autopilot", "reactive", "scheduled"):
+                if isinstance(sg.get(p), dict):
+                    sg[p] = {**sg[p], "ready_at_onset": int(sg[p].get("ready_at_onset") or 0)}
+            keep.append(sg)
+        else:
+            extra.append(sg)
+    rv["surges"], rv["overspend"] = keep, extra
+    return rv
 
 
 def next_message(s: Session) -> dict:
@@ -170,6 +229,8 @@ def next_message(s: Session) -> dict:
         return {"type": "end", "review_url": f"/api/sessions/{s.id}/review"}
     msg = s.game.tick()                                         # advances every player one sim minute
     s.m += 1
+    if msg.get("type") == "tick":
+        msg = clean_tick(msg)
     return msg
 
 
@@ -236,7 +297,7 @@ def live_forecasts(limit: int = Query(20, ge=1, le=200)):
     try:
         rows = latest_forecasts(limit)
         if rows:
-            return rows
+            return [clean_forecast(r) for r in rows]
     except Exception as e:                                        # Snowflake hiccup: keep the screen alive
         print("live_forecasts fallback:", e)
     return mock("forecasts.json")[:limit]
