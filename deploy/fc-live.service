@@ -5,6 +5,6 @@ Type=oneshot
 User=ubuntu
 WorkingDirectory=/home/ubuntu/flashcrowd-model
 EnvironmentFile=/home/ubuntu/flashcrowd-model/.env
-Environment=PYTHONWARNINGS=ignore
+Environment=PYTHONWARNINGS=ignore PYTHONUNBUFFERED=1
 ExecStart=/home/ubuntu/venv/bin/flashcrowd live
 TimeoutStartSec=840
