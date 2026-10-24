@@ -23,8 +23,8 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 | Number | Value |
 |-|-|
 | Edit backfill start date | 2026-10-17 06:55 UTC (EventStreams retention ≈ 7 days) |
-| Days of page views loaded | |
-| Boot median LDN / NJ / TYO (min) | / / |
+| Days of page views loaded | 10 Oct 00:00 → 24 Oct 12:00 UTC (loading; then every 15 min). Published ≈ 2 h 11 min after the hour (min 2:00, max 2:54) |
+| Boot median LDN / NJ / TYO (min) | 0.87 / 0.83 / 1.18 (EC2 t3.micro, Ubuntu 24.04, launch → nginx serving; 5 runs each) |
 | Capacity C (req/s) | |
 | RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | / / |
 
