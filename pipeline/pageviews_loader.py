@@ -65,13 +65,17 @@ def fetch_hour(h):
     return h, None, f"failed: {err}"
 
 
-def load(conn, path):
+def load(conn, path, h):
+    """Idempotent: the hour is deleted and re-copied in one transaction, so a re-run can never double-count."""
     cur = conn.cursor()
     cur.execute(f"PUT 'file://{path}' @{STAGE} AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+    cur.execute("BEGIN")
+    cur.execute("DELETE FROM PAGEVIEWS_HOURLY WHERE hour_utc = %s", (h.strftime("%Y-%m-%d %H:00:00"),))
     cur.execute(f"""COPY INTO PAGEVIEWS_HOURLY (hour_utc, wiki, title, views, published_at)
         FROM @{STAGE}/{path.name}
         FILE_FORMAT = (TYPE=CSV COMPRESSION=GZIP FIELD_OPTIONALLY_ENCLOSED_BY='"' ESCAPE_UNENCLOSED_FIELD=NONE)
-        PURGE = TRUE""")
+        PURGE = TRUE FORCE = TRUE""")
+    cur.execute("COMMIT")
 
 
 def main():
@@ -99,7 +103,7 @@ def main():
                 h, path, info = fut.result()
                 if path is None:
                     print(f"{h:%Y-%m-%d %H}h skipped: {info}", flush=True); continue
-                load(conn, path); path.unlink()
+                load(conn, path, h); path.unlink()
                 with open(DONE, "a") as f: f.write(f"{h:%Y%m%d%H}\n")
                 print(f"{h:%Y-%m-%d %H}h loaded {info} rows", flush=True)
     finally:

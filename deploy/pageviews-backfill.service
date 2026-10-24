@@ -7,4 +7,4 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/flashcrowd-server
 EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
 Environment=FC_DATA=/home/ubuntu/data
-ExecStart=/home/ubuntu/venv/bin/python -W ignore pipeline/pageviews_loader.py --start 2026-10-10T00 --end 2026-10-24T12 --workers 2
+ExecStart=/usr/bin/flock /home/ubuntu/data/pageviews.lock /home/ubuntu/venv/bin/python -W ignore pipeline/pageviews_loader.py --start 2026-10-10T00 --end 2026-10-24T12 --workers 2

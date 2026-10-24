@@ -4,20 +4,20 @@
   "title": "Kehlsteinhaus surge in London",
   "start": "2026-10-24T06:00:00Z",
   "hours": 6,
-  "note": "REAL Wikipedia demand (dewiki 'Kehlsteinhaus': peak 10,563 views/h vs 0 a day earlier). Servers needed jump 2.33x at 08:00 UTC. Measured B and C. persistence region forecasts (PC3 live forecasts not yet available for this window)."
+  "note": "REAL Wikipedia demand (dewiki 'Kehlsteinhaus': peak 10,563 views/h vs 0 a day earlier). Servers needed jump 2.33x at 08:00 UTC. Measured B and C. PC3 model forecasts, as-of (no look-ahead), HELD-OUT test day."
  },
  {
   "id": "oct-18-morning-tyo",
   "title": "藤咲碧羽 surge in Tokyo",
   "start": "2026-10-18T09:00:00Z",
   "hours": 6,
-  "note": "REAL Wikipedia demand (jawiki '藤咲碧羽': peak 51,069 views/h vs 100 a day earlier). Servers needed jump 2.00x at 11:00 UTC. Measured B and C. persistence region forecasts (PC3 live forecasts not yet available for this window)."
+  "note": "REAL Wikipedia demand (jawiki '藤咲碧羽': peak 51,069 views/h vs 100 a day earlier). Servers needed jump 2.00x at 11:00 UTC. Measured B and C. PC3 model forecasts, as-of (no look-ahead), IN-SAMPLE (inside the model's training window)."
  },
  {
   "id": "oct-21-morning-nj",
   "title": "PHP2Shell surge in New Jersey",
   "start": "2026-10-21T11:00:00Z",
   "hours": 6,
-  "note": "REAL Wikipedia demand (enwiki 'PHP2Shell': peak 30,991 views/h vs 0 a day earlier). Servers needed jump 1.67x at 13:00 UTC. Measured B and C. persistence region forecasts (PC3 live forecasts not yet available for this window)."
+  "note": "REAL Wikipedia demand (enwiki 'PHP2Shell': peak 30,991 views/h vs 0 a day earlier). Servers needed jump 1.67x at 13:00 UTC. Measured B and C. PC3 model forecasts, as-of (no look-ahead), IN-SAMPLE (inside the model's training window)."
  }
 ]

@@ -1,8 +1,8 @@
 """Build REAL level packages for flashcrowd_engine.GameSession from Snowflake (PC1).
 
 Format = PC3's `flashcrowd export` package: {level, constants, hourly_views, scheduled, region_forecasts, article_forecasts}.
-  - hourly_views[r]: real published page views of the TRACKED articles (top 500 per wiki per hour, i.e. the roadmap's
-    candidate grid), weighted into regions with CONTRACTS 3.1 (enwiki default split LDN .35 / NJ .45 / TYO .20).
+  - hourly_views[r]: real published page views per region, computed with PC3's regional_views (same basis as
+    REGION_FORECASTS; enwiki split by PC3's hour-of-day default weights).
   - constants: PC1's measured B and C via flashcrowd_engine.from_measurements; SCALE via calibrate_scale.
   - scheduled: flashcrowd_engine.scheduled_table over the 7 days before the level.
   - region_forecasts / article_forecasts: PC3's real FORECASTS / REGION_FORECASTS rows when they exist for the window,
@@ -29,15 +29,19 @@ H = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def regional_hourly(cur):
-    rows = cur.execute(f"""
-        WITH r AS (SELECT hour_utc, wiki, views,
-                   ROW_NUMBER() OVER (PARTITION BY hour_utc, wiki ORDER BY views DESC) rk FROM PAGEVIEWS_ARTICLES)
-        SELECT hour_utc, wiki, SUM(views) FROM r WHERE rk <= {TOP_N} GROUP BY 1, 2 ORDER BY 1""").fetchall()
-    series = {}
-    for h, wiki, v in rows:
-        for reg, w in WEIGHTS[wiki].items():
-            series.setdefault(h, {r: 0.0 for r in REGIONS})[reg] += float(v) * w
-    hours = sorted(series)
+    """V_r(h) with PC3's own definition (flashcrowd_model.regions.regional_views): all published views per wiki-hour,
+    enwiki split by the hour-of-day default weights. Same basis as PC3's REGION_FORECASTS, so the autopilot's
+    forecasts and the simulated demand are in the same units."""
+    import types, pandas as pd
+    from flashcrowd_model.regions import regional_views
+    rows = cur.execute("SELECT hour_utc, wiki, SUM(views) FROM PAGEVIEWS_HOURLY GROUP BY 1, 2").fetchall()
+    w = pd.DataFrame(rows, columns=["hour_utc", "wiki", "views"])
+    w["views"] = w["views"].astype(float)
+    raw = types.SimpleNamespace(wiki_hour_views=w,
+                                en_shared=pd.DataFrame(columns=["hour_utc", "region", "views_weighted", "views_raw"]))
+    rv = regional_views(raw)
+    hours = [h.to_pydatetime() for h in rv.index]
+    series = {h.to_pydatetime(): {r: float(rv.loc[h, r]) for r in REGIONS} for h in rv.index}
     return hours, series
 
 
@@ -71,6 +75,7 @@ def main():
     ap.add_argument("--n", type=int, default=3)
     ap.add_argument("--since", default="2026-10-18")
     ap.add_argument("--hours", type=int, default=6)
+    ap.add_argument("--test-start", default="2026-10-24", help="first held-out day of the current model (metrics.json test split)")
     a = ap.parse_args()
     conn = connect(); cur = conn.cursor()
     meas = cur.execute("SELECT kind, region, value, unit FROM INFRA_MEASUREMENTS WHERE kind IN ('boot','capacity')").fetchall()
@@ -104,7 +109,9 @@ def main():
         lid = f"{start:%b-%d}-{part}-{r}".lower()
         name = art[1].replace("_", " ") if art else "regional"
         rf, af = live_forecasts(cur, start, end)
-        src = "PC3 live forecasts"
+        held_out = start >= datetime.fromisoformat(a.test_start)
+        src = ("PC3 model forecasts, as-of (no look-ahead), " +
+               ("HELD-OUT test day" if held_out else "IN-SAMPLE (inside the model's training window)"))
         if not rf:
             rf = persistence_forecasts({rr: [S[hours[j - 24]][rr] for j in range(s, s + a.hours)] for rr in REGIONS}, H(start))
             src = "persistence region forecasts (PC3 live forecasts not yet available for this window)"
