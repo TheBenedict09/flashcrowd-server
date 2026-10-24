@@ -342,3 +342,134 @@ async def tts(body: TTS):
             raise ApiError(502, "tts_upstream_error", f"ElevenLabs returned {r.status_code}")
         f.write_bytes(r.content)
     return Response(f.read_bytes(), media_type="audio/mpeg")
+
+
+# ====================================================================== ARCADE (game) endpoints
+# /api/game/events: headlines for spikes, written by Gemini (server-side key), grounded in real-world topics.
+# /api/game/baseline: real daily traffic rhythm per region (normalised hour-of-day curve from PAGEVIEWS_HOURLY).
+import random as _random
+
+GAME_CACHE: dict = {}
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GAME_CITIES = {"LDN": "London (UK and Europe)", "NJ": "New Jersey (the Americas)", "TYO": "Tokyo (Japan, Korea, Indonesia)"}
+
+_DEFEND_PROMPT = """You write breaking-news headlines for an arcade game about website traffic spikes.
+Each headline must be about a REAL, widely known real-world topic people would rush to read about online:
+a real game or film release (e.g. GTA VI), a real sports competition (e.g. FIFA World Cup 2026, Champions League),
+a real election, a real tech launch, a real award show, real weather seasons, or a real war or peace talks.
+Rules: keep conflict, disaster and political headlines neutral and factual in tone, no jokes about them;
+do not invent casualty numbers, quotes or specific claims; no private individuals.
+Give {n} headlines, each tied to the region where readers would surge: LDN = {LDN}; NJ = {NJ}; TYO = {TYO}.
+Spread them evenly across LDN, NJ and TYO. Max 60 characters each, one fitting emoji each.
+Also give one boss name: a dramatic 2-4 word ALL-CAPS name for the biggest real-world traffic event (e.g. "THE GTA VI LAUNCH").
+Level {level} of 5, difficulty {difficulty}. Variety seed: {seed}."""
+
+_ATTACK_PROMPT = """You write funny popup titles for an arcade game where the player creates internet traffic spikes in a city.
+Each title must be light-hearted and based on real pop culture, games, sport, food, tech or internet culture
+connected to the city's region: LDN = {LDN}; NJ = {NJ}; TYO = {TYO}.
+NEVER joke about wars, deaths, disasters, crimes, illness or real tragedies, and never target private individuals.
+Give {n} titles spread evenly across LDN, NJ and TYO. Max 60 characters each, one fitting emoji each.
+Level {level} of 5. Variety seed: {seed}."""
+
+
+def _schema(with_boss: bool):
+    item = {"type": "object", "properties": {
+        "city": {"type": "string", "enum": ["LDN", "NJ", "TYO"]},
+        "title": {"type": "string"}, "emoji": {"type": "string"},
+        "kind": {"type": "string", "enum": ["gaming", "sports", "politics", "tech", "entertainment", "world", "weather", "economy", "breaking", "funny"]},
+        "intensity": {"type": "integer"}}, "required": ["city", "title", "emoji"]}
+    props = {"items": {"type": "array", "items": item}}
+    if with_boss:
+        props["boss"] = {"type": "object", "properties": {"name": {"type": "string"}, "emoji": {"type": "string"}}, "required": ["name", "emoji"]}
+    return {"type": "object", "properties": props, "required": ["items"]}
+
+
+async def _gemini(prompt: str, schema: dict) -> dict | None:
+    key = os.getenv("GEMINI_API_KEY", "")
+    if not key or key == "...":
+        return None
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema, "temperature": 1.0}}
+    try:
+        async with httpx.AsyncClient(timeout=9) as c:
+            r = await c.post(GEMINI_URL.format(model=model), headers={"x-goog-api-key": key}, json=body)
+        if r.status_code != 200:
+            print("gemini", r.status_code, r.text[:200]); return None
+        txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+        return json.loads(txt)
+    except Exception as e:                                          # network, quota, parse: the game falls back
+        print("gemini error:", e); return None
+
+
+def _clean_items(items, funny: bool):
+    out = []
+    for x in items or []:
+        if not isinstance(x, dict) or x.get("city") not in GAME_CITIES:
+            continue
+        t = str(x.get("title", "")).strip()[:70]
+        if not t:
+            continue
+        out.append({"city": x["city"], "title": t, "emoji": str(x.get("emoji") or ("😂" if funny else "⚡"))[:4],
+                    "kind": "funny" if funny else (x.get("kind") or "breaking"),
+                    "intensity": max(1, min(5, int(x.get("intensity") or 3)))})
+    return out
+
+
+@app.get("/api/game/events")
+async def game_events(mode: str = Query("defend"), level: int = Query(1, ge=1, le=5), difficulty: str = Query("normal")):
+    mode = "attack" if mode == "attack" else "defend"
+    slot = int(time.time() // 600)                                  # fresh batch every 10 minutes
+    key = (mode, level, difficulty, slot, _random.randint(0, 2))    # up to 3 variants per slot
+    hit = GAME_CACHE.get(key)
+    if hit:
+        return hit
+    n = 24 if mode == "defend" else 18
+    fmt_args = dict(n=n, level=level, difficulty=difficulty, seed=_random.randint(1, 10**6), **GAME_CITIES)
+    prompt = (_DEFEND_PROMPT if mode == "defend" else _ATTACK_PROMPT).format(**fmt_args)
+    res = await _gemini(prompt, _schema(mode == "defend"))
+    if res:
+        items = _clean_items(res.get("items"), funny=(mode == "attack"))
+        if len(items) >= 6:
+            out = {"source": "gemini", "items": items}
+            if mode == "defend" and isinstance(res.get("boss"), dict) and res["boss"].get("name"):
+                out["boss"] = {"name": str(res["boss"]["name"]).upper()[:32], "emoji": str(res["boss"].get("emoji") or "👾")[:4]}
+            if len(GAME_CACHE) > 200:
+                GAME_CACHE.clear()
+            GAME_CACHE[key] = out
+            return out
+    return {"source": "unavailable", "items": []}                   # client uses its curated real-news pool
+
+
+BASELINE: dict = {}
+
+
+@app.get("/api/game/baseline")
+def game_baseline():
+    if BASELINE:
+        return BASELINE
+    import sys
+    sys.path.insert(0, str(ROOT.parent))
+    try:
+        from pipeline.sf import connect
+        with connect() as conn:
+            rows = conn.cursor().execute("""
+                SELECT HOUR(hour_utc) h, wiki, AVG(v) FROM (
+                  SELECT hour_utc, wiki, SUM(views) v FROM PAGEVIEWS_HOURLY GROUP BY 1, 2) GROUP BY 1, 2""").fetchall()
+        region = {"dewiki": {"LDN": 1}, "frwiki": {"LDN": 1}, "itwiki": {"LDN": 1}, "nlwiki": {"LDN": 1},
+                  "eswiki": {"NJ": 1}, "ptwiki": {"NJ": 1}, "jawiki": {"TYO": 1}, "kowiki": {"TYO": 1}, "idwiki": {"TYO": 1},
+                  "enwiki": {"LDN": 0.35, "NJ": 0.45, "TYO": 0.20}}
+        acc = {r: [0.0] * 24 for r in REGIONS}
+        for h, wiki, v in rows:
+            for r, w in region.get(wiki, {}).items():
+                acc[r][int(h)] += float(v) * w
+        out = {}
+        for r, vals in acc.items():
+            lo, hi = min(vals), max(vals)
+            out[r] = [round((v - lo) / (hi - lo), 4) if hi > lo else 0.5 for v in vals]
+        out["source"] = "wikipedia pageviews (real, UTC hour of day)"
+        BASELINE.update(out)
+        return BASELINE
+    except Exception as e:
+        print("baseline fallback:", e)
+        raise ApiError(503, "baseline_unavailable", "Real baseline not available right now.")
