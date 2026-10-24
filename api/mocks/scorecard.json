@@ -1,0 +1,41 @@
+{
+  "since": "2026-10-24T14:00:00Z",
+  "checked": 37,
+  "hits": 21,
+  "misses": 6,
+  "false_alarms": 10,
+  "median_lead_h": 1.4,
+  "note": "SYNTHETIC placeholder until the live scorecard job runs.",
+  "rows": [
+    {
+      "issued_at": "2026-10-24T15:00:00Z",
+      "wiki": "enwiki",
+      "title": "Battle_of_Schliengen",
+      "p_surge": 0.82,
+      "horizon_h": 2,
+      "outcome": "hit",
+      "actual_peak_views": 154000,
+      "verified_at": "2026-10-24T19:08:00Z"
+    },
+    {
+      "issued_at": "2026-10-24T15:00:00Z",
+      "wiki": "jawiki",
+      "title": "台風",
+      "p_surge": 0.64,
+      "horizon_h": 2,
+      "outcome": "false_alarm",
+      "actual_peak_views": 4100,
+      "verified_at": "2026-10-24T19:08:00Z"
+    },
+    {
+      "issued_at": "2026-10-24T16:00:00Z",
+      "wiki": "dewiki",
+      "title": "Bundesliga",
+      "p_surge": 0.31,
+      "horizon_h": 3,
+      "outcome": "miss",
+      "actual_peak_views": 61000,
+      "verified_at": "2026-10-24T21:08:00Z"
+    }
+  ]
+}

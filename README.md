@@ -28,6 +28,11 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 | Capacity C (req/s) | 254 (t3.micro, nginx static 558 KB page, p95<200 ms; network-bound — see infra/loadtest.md) |
 | RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | 75.5 / 147.7 / 215.3 (TCP connect, first medians; probes run all weekend) |
 
+## API (live, mock mode)
+- Base URL for PC2: **`http://18.132.176.215/api`** — WS: `ws://18.132.176.215/api/sessions/{id}/stream`
+- `MOCK=1` serves `api/mocks/` (PC2's `levels.json` + `ticks.jsonl`; the other 5 are contract-shaped placeholders). Smoke test: `python scripts/api_smoke_test.py`
+- nginx: `/` → `/var/www/flashcrowd` (frontend), `/api` + WS → uvicorn :8000, rate limit 20 r/s per IP.
+
 ## fc-core (AWS, London)
 - Instance `fc-core`, t3.medium, Elastic IP **18.132.176.215**. SSH: `ssh -i secrets/fc_ssh ubuntu@18.132.176.215`
 - RTT probes: `fc-rtt-LDN/NJ/TYO` (t3.nano) → `rtt-collect.timer` every 5 min (`infra/rtt_probe.py summary`).

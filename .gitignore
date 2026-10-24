@@ -11,3 +11,4 @@ data/
 .idea/
 .vscode/
 secrets/
+!api/mocks/*.jsonl

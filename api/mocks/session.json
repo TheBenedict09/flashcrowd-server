@@ -1,0 +1,15 @@
+{
+  "session_id": "mock-session",
+  "start": "2026-10-19T12:00:00Z",
+  "end": "2026-10-19T18:00:00Z",
+  "constants": {
+    "C": 254,
+    "B": {
+      "LDN": 0.87,
+      "NJ": 0.83,
+      "TYO": 1.18
+    },
+    "SCALE": 1.0,
+    "note": "B and C are real measurements (AWS EC2, 24 Oct); SCALE is a placeholder until PC3 sets it."
+  }
+}

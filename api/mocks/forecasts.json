@@ -1,0 +1,122 @@
+[
+  {
+    "wiki": "jawiki",
+    "title": "台風",
+    "region": "TYO",
+    "cause": "breaking_news",
+    "p_surge": 0.81,
+    "size_q50": 38000,
+    "size_q90": 90000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 9 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "enwiki",
+    "title": "World_Series",
+    "region": "NJ",
+    "cause": "sports",
+    "p_surge": 0.76,
+    "size_q50": 52000,
+    "size_q90": 108000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 10 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "frwiki",
+    "title": "Éclipse_solaire",
+    "region": "LDN",
+    "cause": "scheduled_event",
+    "p_surge": 0.68,
+    "size_q50": 35000,
+    "size_q90": 72000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 11 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "enwiki",
+    "title": "Synthetic_Music_Festival",
+    "region": "LDN",
+    "cause": "entertainment",
+    "p_surge": 0.58,
+    "size_q50": 24000,
+    "size_q90": 62000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 12 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "dewiki",
+    "title": "Synthetic_Article_Update",
+    "region": "LDN",
+    "cause": "bot_maintenance",
+    "p_surge": 0.12,
+    "size_q50": 4000,
+    "size_q90": 9000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 13 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "ptwiki",
+    "title": "Synthetic_Tournament",
+    "region": "NJ",
+    "cause": "sports",
+    "p_surge": 0.64,
+    "size_q50": 33000,
+    "size_q90": 81000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 14 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "kowiki",
+    "title": "Synthetic_Launch",
+    "region": "TYO",
+    "cause": "scheduled_event",
+    "p_surge": 0.61,
+    "size_q50": 29000,
+    "size_q90": 65000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 15 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  },
+  {
+    "wiki": "idwiki",
+    "title": "Synthetic_Edit_Dispute",
+    "region": "TYO",
+    "cause": "edit_war",
+    "p_surge": 0.19,
+    "size_q50": 6000,
+    "size_q90": 16000,
+    "issued_at": "2026-10-19T12:00:00Z",
+    "horizon_h": 2,
+    "top_reasons": [
+      "Synthetic signal: 16 human editors in the last hour",
+      "Synthetic demonstration; no live forecast or verified event"
+    ]
+  }
+]

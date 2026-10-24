@@ -1,0 +1,12 @@
+[Unit]
+Description=FLASHCROWD API (uvicorn)
+After=network-online.target
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers
+Restart=always
+RestartSec=3
+[Install]
+WantedBy=multi-user.target

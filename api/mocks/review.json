@@ -1,0 +1,55 @@
+{
+  "you": {
+    "served_pct": 83.69,
+    "server_hours": 54,
+    "breach_minutes": 292,
+    "grade": "D"
+  },
+  "autopilot": {
+    "served_pct": 99.96,
+    "server_hours": 96.3,
+    "breach_minutes": 5
+  },
+  "reactive": {
+    "served_pct": 99.86,
+    "server_hours": 76.8,
+    "breach_minutes": 19
+  },
+  "scheduled": {
+    "served_pct": 96.01,
+    "server_hours": 89.9,
+    "breach_minutes": 94
+  },
+  "surges": [
+    {
+      "title": "台風",
+      "region": "TYO",
+      "onset": "2026-10-19T14:00:00Z",
+      "needed_servers": 9,
+      "you": {
+        "ready_at_onset": 5,
+        "verdict": "late",
+        "minutes_short": 24
+      },
+      "autopilot": {
+        "ready_at_onset": 9,
+        "verdict": "on_time"
+      }
+    },
+    {
+      "title": "World_Series",
+      "region": "NJ",
+      "onset": "2026-10-19T15:00:00Z",
+      "needed_servers": 7,
+      "you": {
+        "ready_at_onset": 7,
+        "verdict": "on_time",
+        "minutes_short": 0
+      },
+      "autopilot": {
+        "ready_at_onset": 7,
+        "verdict": "brilliant"
+      }
+    }
+  ]
+}

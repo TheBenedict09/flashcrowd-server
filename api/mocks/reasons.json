@@ -1,0 +1,10 @@
+{
+  "region": "TYO",
+  "action": "start 3 servers",
+  "p_surge": 0.81,
+  "reasons": [
+    "9 human editors in the last hour on '台風'",
+    "Created in 4 languages",
+    "In 'In the news' since 14:20"
+  ]
+}
