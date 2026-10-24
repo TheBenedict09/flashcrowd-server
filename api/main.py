@@ -201,13 +201,54 @@ async def stream(ws: WebSocket, sid: str):
         s.streaming = False
 
 
+LIVE_CACHE: dict = {}
+SCORECARD_FILE = pathlib.Path(os.getenv("FC_SCORECARD", "/home/ubuntu/flashcrowd-model/artifacts/live/scorecard.json"))
+
+
+def _iso(t):
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(t, "strftime") else t
+
+
+def latest_forecasts(limit):
+    """Latest batch from PC3's FORECASTS table (cached 60 s). Empty list if none yet."""
+    hit = LIVE_CACHE.get("fc")
+    if hit and time.time() - hit[0] < 60:
+        return hit[1][:limit]
+    import sys
+    sys.path.insert(0, str(ROOT.parent))
+    from pipeline.sf import connect
+    with connect() as conn:
+        cur = conn.cursor()
+        rows = cur.execute("""
+            SELECT issued_at, wiki, title, region, horizon_h, p_surge, size_q50, size_q90, cause, top_reasons
+            FROM FORECASTS WHERE issued_at = (SELECT MAX(issued_at) FROM FORECASTS)
+            QUALIFY ROW_NUMBER() OVER (PARTITION BY wiki, title ORDER BY p_surge DESC) = 1
+            ORDER BY p_surge DESC LIMIT 200""").fetchall()
+    out = [{"issued_at": _iso(r[0]), "wiki": r[1], "title": r[2], "region": r[3], "horizon_h": int(r[4]),
+            "p_surge": round(float(r[5]), 4), "size_q50": float(r[6] or 0), "size_q90": float(r[7] or 0), "cause": r[8],
+            "top_reasons": json.loads(r[9]) if isinstance(r[9], str) else (r[9] or [])} for r in rows]
+    LIVE_CACHE["fc"] = (time.time(), out)
+    return out[:limit]
+
+
 @app.get("/api/live/forecasts")
 def live_forecasts(limit: int = Query(20, ge=1, le=200)):
+    try:
+        rows = latest_forecasts(limit)
+        if rows:
+            return rows
+    except Exception as e:                                        # Snowflake hiccup: keep the screen alive
+        print("live_forecasts fallback:", e)
     return mock("forecasts.json")[:limit]
 
 
 @app.get("/api/live/scorecard")
 def live_scorecard():
+    if SCORECARD_FILE.exists():                                   # written every 15 min by PC3's `flashcrowd scorecard`
+        try:
+            return json.loads(SCORECARD_FILE.read_text(encoding="utf-8"))
+        except ValueError:
+            pass
     return mock("scorecard.json")
 
 
