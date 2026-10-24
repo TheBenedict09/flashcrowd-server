@@ -22,7 +22,11 @@ def boot_once(label, itype):
                           )["Instances"][0]["InstanceId"]
     try:
         while time.time() - t0 < 900:
-            inst = c.describe_instances(InstanceIds=[iid])["Reservations"][0]["Instances"][0]
+            try:
+                inst = c.describe_instances(InstanceIds=[iid])["Reservations"][0]["Instances"][0]
+            except c.exceptions.ClientError as e:      # new instance not visible yet (eventual consistency)
+                if "InvalidInstanceID.NotFound" in str(e): time.sleep(2); continue
+                raise
             ip = inst.get("PublicIpAddress")
             if ip:
                 try:
