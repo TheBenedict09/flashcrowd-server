@@ -1,0 +1,8 @@
+[Unit]
+Description=FLASHCROWD In the news additions
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/python -W ignore pipeline/itn_history.py --since 2026-10-03T00:00:00Z

@@ -1,0 +1,7 @@
+[Unit]
+Description=FLASHCROWD In the news additions schedule
+[Timer]
+OnCalendar=*:0/10
+Persistent=true
+[Install]
+WantedBy=timers.target

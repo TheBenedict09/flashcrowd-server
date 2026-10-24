@@ -1,0 +1,7 @@
+[Unit]
+Description=FLASHCROWD Today's Featured Article schedule
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:10:00
+Persistent=true
+[Install]
+WantedBy=timers.target

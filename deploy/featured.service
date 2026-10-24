@@ -1,0 +1,8 @@
+[Unit]
+Description=FLASHCROWD Today's Featured Article
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/python -W ignore pipeline/featured_loader.py
