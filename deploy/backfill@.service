@@ -1,0 +1,13 @@
+# One backfill chunk. Instance name = "<since>_<until>", e.g. backfill@2026-10-14T00:00:00Z_2026-10-16T00:00:00Z
+[Unit]
+Description=FLASHCROWD edit backfill %i
+After=network-online.target
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/bin/bash -c 'S=$${0%%_*}; U=$${0##*_}; exec /home/ubuntu/venv/bin/python pipeline/recorder.py --since $S --until $U --out /home/ubuntu/data/edits_backfill_$${S:0:10}.jsonl' %i
+Restart=on-failure
+RestartSec=10
+[Install]
+WantedBy=multi-user.target

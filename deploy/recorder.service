@@ -2,9 +2,11 @@
 Description=FLASHCROWD live edit recorder
 After=network-online.target
 [Service]
-WorkingDirectory=/home/fc/flashcrowd-server
-EnvironmentFile=/home/fc/flashcrowd-server/.env
-ExecStart=/home/fc/venv/bin/python pipeline/recorder.py --out /home/fc/data/edits_live.jsonl
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/python pipeline/recorder.py --out /home/ubuntu/data/edits_live.jsonl
 Restart=always
+RestartSec=5
 [Install]
 WantedBy=multi-user.target

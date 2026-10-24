@@ -1,0 +1,9 @@
+#cloud-config
+# fc-core: recorder, backfill, loaders, API (roadmap §6 P0)
+package_update: true
+packages: [python3-venv, python3-pip, nginx, git, jq, hey]
+runcmd:
+  - sudo -u ubuntu python3 -m venv /home/ubuntu/venv
+  - sudo -u ubuntu /home/ubuntu/venv/bin/pip install -q requests requests-sse "snowflake-connector-python[pandas]" pandas cryptography fastapi "uvicorn[standard]" websockets python-dotenv httpx boto3
+  - sudo -u ubuntu mkdir -p /home/ubuntu/data /home/ubuntu/flashcrowd-server
+  - touch /home/ubuntu/READY

@@ -22,8 +22,13 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 ## Numbers (fill in)
 | Number | Value |
 |-|-|
-| Edit backfill start date | |
+| Edit backfill start date | 2026-10-17 06:55 UTC (EventStreams retention ≈ 7 days) |
 | Days of page views loaded | |
 | Boot median LDN / NJ / TYO (min) | / / |
 | Capacity C (req/s) | |
 | RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | / / |
+
+## fc-core (AWS, London)
+- Instance `fc-core`, t3.medium, Elastic IP **18.132.176.215**. SSH: `ssh -i secrets/fc_ssh ubuntu@18.132.176.215`
+- Services: `recorder` (live), `backfill@<since>_<until>` (5 chunks), `load-edits.timer` (every 5 min → Snowflake `EDITS`; read `EDITS_CLEAN`).
+- Deploy code: `rsync -az -e 'ssh -i secrets/fc_ssh' --exclude .venv --exclude .git --exclude 'secrets/fc_ssh*' ./ ubuntu@18.132.176.215:~/flashcrowd-server/`

@@ -1,0 +1,8 @@
+[Unit]
+Description=FLASHCROWD load edits JSONL -> Snowflake
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/python pipeline/load_edits.py
