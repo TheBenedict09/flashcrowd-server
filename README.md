@@ -30,7 +30,18 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 
 ## API (live)
 - **Game sessions are real**: PC3's `flashcrowd_engine.GameSession` (v0.3) over `api/levels/*.json`, built by `api/build_levels.py` from Snowflake (real page views of tracked articles, measured B/C, SCALE via `calibrate_scale`). Rebuild: `python api/build_levels.py --n 3` then restart `api`.
-- Boss levels: `oct-24-morning-ldn` (Kehlsteinhaus), `oct-18-morning-tyo` (藤咲碧羽), `oct-21-morning-nj` (PHP2Shell).
+- Boss levels (clean data, PC3 model forecasts as-of; all inside the training window = in-sample):
+  `oct-22-morning-ldn` (John Anderson), `oct-23-evening-tyo` (Jacob Misiorowski), `oct-21-afternoon-nj` (BioWare).
+  Autopilot vs reactive server-hours at 100% served: 85.5 vs 95.0 · 98.2 vs 116.4 · 123.4 vs 134.7 (-8% to -16%).
+- Frontend: PC2's `flashcrowd-web` built with `VITE_SYNTHETIC_DATA=false`, served from `/var/www/flashcrowd` → **http://18.132.176.215/**
+
+## PC3 model on fc-core (`~/flashcrowd-model`, run by PC1)
+- Trained on real Snowflake data (`configs/train_short.json`, window 17 Oct 10:00 → 24 Oct 12:00, test = 24 Oct).
+  Held-out PR-AUC (surge within 2 h) **0.067 vs persistence 0.006**; median lead 2.0 h; onset recall 0.09.
+- Timers: `fc-live` (forecasts every 15 min → FORECASTS/REGION_FORECASTS), `fc-scorecard` (genuine live forecasts from 20:00 UTC).
+- Incident 24 Oct ~20:10 BST: 5 page-view hours (24 Oct 07–11 UTC) had been loaded twice by an overlap of the backfill and
+  the 15-min job. Fixed (dedup + idempotent per-hour load + flock), model retrained, forecasts and levels regenerated.
+  The contaminated run is kept in `~/flashcrowd-model/artifacts_contaminated_dup_pv/`.
 
 ## API (mock pieces)
 - Base URL for PC2: **`http://18.132.176.215/api`** — WS: `ws://18.132.176.215/api/sessions/{id}/stream`
