@@ -1,0 +1,10 @@
+[Unit]
+Description=FLASHCROWD live scorecard (PC3 flashcrowd-model)
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-model
+EnvironmentFile=/home/ubuntu/flashcrowd-model/.env
+Environment=PYTHONWARNINGS=ignore
+ExecStart=/home/ubuntu/venv/bin/flashcrowd scorecard 2026-10-24T13:00
+TimeoutStartSec=840

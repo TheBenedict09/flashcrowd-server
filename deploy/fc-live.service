@@ -1,0 +1,10 @@
+[Unit]
+Description=FLASHCROWD live forecasts -> FORECASTS + REGION_FORECASTS (PC3 flashcrowd-model)
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-model
+EnvironmentFile=/home/ubuntu/flashcrowd-model/.env
+Environment=PYTHONWARNINGS=ignore
+ExecStart=/home/ubuntu/venv/bin/flashcrowd live
+TimeoutStartSec=840
