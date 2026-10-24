@@ -1,10 +1,11 @@
 # CONTRACTS.md — FLASHCROWD (copied verbatim from roadmap §3; keep identical in all three repos)
 
-> `CONTRACTS_VERSION = 1.0` — any change is announced in the team chat and the version bumped in all three repos.
+> `CONTRACTS_VERSION = 1.1` — any change is announced in the team chat and the version bumped in all three repos.
 
 ### 3.1 Naming and units
 - All times **UTC**, ISO-8601 with `Z` (`2026-10-24T14:00:00Z`). Python: timezone-aware `datetime`. Snowflake: `TIMESTAMP_NTZ` holding UTC.
-- **Regions:** `LDN`, `NJ`, `TYO` ↔ Vultr region IDs `lhr`, `ewr`, `nrt` (confirm with `GET /v2/regions`).
+- **Regions:** `LDN`, `NJ`, `TYO` ↔ AWS regions `eu-west-2` (London), `us-east-1` (N. Virginia — stands in for the US-East/NJ edge; label stays `NJ`), `ap-northeast-1` (Tokyo).
+  - *v1.1 change (Sat 16:00): cloud provider switched from Vultr to AWS EC2. Region labels unchanged, so no frontend/model code changes needed.*
 - **Wikis tracked** (`wiki` = EventStreams `wiki` field): `enwiki dewiki frwiki itwiki nlwiki eswiki ptwiki jawiki kowiki idwiki`.
 - **Wiki → region map** (stated assumption, goes on a slide):
 
@@ -113,7 +114,7 @@ CREATE TABLE IF NOT EXISTS INFRA_MEASUREMENTS (  -- written by PC1
 ### 3.5 HTTP + WebSocket API (PC1 builds, PC2 calls). Base: `https://<api-host>/api`
 | Method | Path | Body / query | Returns |
 |-|-|-|-|
-| GET | `/health` | – | `{"ok":true,"version":"1.0"}` |
+| GET | `/health` | – | `{"ok":true,"version":"1.1"}` |
 | GET | `/levels` | – | `[{"id":"oct-19-evening","title":"Sunday night surge","start":"...Z","hours":6,"note":"..."}]` |
 | POST | `/sessions` | `{"level_id":"...", "speed":60}` (speed = sim minutes per real second) | `{"session_id":"abc","start":"...Z","end":"...Z","constants":{"C":...,"B":{"LDN":..},"SCALE":...}}` |
 | POST | `/sessions/{id}/action` | `{"type":"scale","region":"TYO","delta":1}` | `{"ok":true}` or `{"ok":false,"error":"min_servers"}` |

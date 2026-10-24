@@ -1,3 +1,13 @@
 #cloud-config
-# TODO (PC1): install nginx + ~200 article HTMLs + /wiki/healthz.html (roadmap §6 D1)
-packages: [nginx]
+# Mini-Wikipedia edge for the boot bench + capacity test (roadmap §6 D1).
+# healthz.html is written LAST, so a 200 on it means "nginx up and content ready".
+packages: [nginx, curl]
+runcmd:
+  - mkdir -p /var/www/html/wiki
+  - |
+    UA="FlashcrowdOxHack/1.0 (singhayushbenedict@gmail.com)"
+    for t in Mount_Fuji United_Kingdom Tokyo London New_York_City Wikipedia Python_(programming_language) Albert_Einstein Taylor_Swift Association_football; do
+      curl -s -A "$UA" "https://en.wikipedia.org/api/rest_v1/page/html/$t" -o "/var/www/html/wiki/$t.html" || true
+    done
+  - systemctl enable --now nginx
+  - echo ok > /var/www/html/wiki/healthz.html

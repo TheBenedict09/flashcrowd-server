@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-CONTRACTS_VERSION = "1.0"
+CONTRACTS_VERSION = "1.1"
 app = FastAPI(title="FLASHCROWD API")
 app.add_middleware(CORSMiddleware, allow_origins=[os.getenv("FRONTEND_ORIGIN", "*")],
                    allow_methods=["*"], allow_headers=["*"])

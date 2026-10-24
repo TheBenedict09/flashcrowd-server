@@ -1,8 +1,8 @@
 # flashcrowd-server (PC1 — Cloud + Backend)
 
-FLASHCROWD predicts Wikipedia traffic surges 1–3 h ahead and decides how many servers to start in London, New Jersey and Tokyo. This repo holds the data pipeline (edit recorder, page-view loader, Snowflake), infra measurements (Vultr boot/RTT/capacity) and the FastAPI + WebSocket server.
+FLASHCROWD predicts Wikipedia traffic surges 1–3 h ahead and decides how many servers to start in London, New Jersey and Tokyo. This repo holds the data pipeline (edit recorder, page-view loader, Snowflake), infra measurements (AWS EC2 boot/RTT/capacity) and the FastAPI + WebSocket server.
 
-Contracts: see `CONTRACTS.md` (version 1.0). Never build against another repo's half-finished code.
+Contracts: see `CONTRACTS.md` (version 1.1). Never build against another repo's half-finished code.
 
 ## Run locally
 ```bash
@@ -15,7 +15,7 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 ## Layout
 - `sql/ddl.sql` — Snowflake objects (run once)
 - `pipeline/` — recorder, backfill, loaders
-- `infra/` — Vultr boot bench, RTT probe, load test
+- `infra/` — EC2 boot bench, RTT probe, load test
 - `api/` — FastAPI app
 - `deploy/` — systemd units, nginx
 
