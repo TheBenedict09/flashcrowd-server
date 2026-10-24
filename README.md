@@ -26,7 +26,7 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 | Days of page views loaded | 10 Oct 00:00 → 24 Oct 12:00 UTC (loading; then every 15 min). Published ≈ 2 h 11 min after the hour (min 2:00, max 2:54) |
 | Boot median LDN / NJ / TYO (min) | 0.87 / 0.83 / 1.18 (EC2 t3.micro, Ubuntu 24.04, launch → nginx serving; 5 runs each) |
 | Capacity C (req/s) | 254 (t3.micro, nginx static 558 KB page, p95<200 ms; network-bound — see infra/loadtest.md) |
-| RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | / / |
+| RTT LDN–NJ / NJ–TYO / LDN–TYO (ms) | 75.5 / 147.7 / 215.3 (TCP connect, first medians; probes run all weekend) |
 
 ## fc-core (AWS, London)
 - Instance `fc-core`, t3.medium, Elastic IP **18.132.176.215**. SSH: `ssh -i secrets/fc_ssh ubuntu@18.132.176.215`
