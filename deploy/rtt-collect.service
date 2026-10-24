@@ -1,0 +1,8 @@
+[Unit]
+Description=FLASHCROWD collect RTT probe logs -> Snowflake
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+EnvironmentFile=/home/ubuntu/flashcrowd-server/.env
+ExecStart=/home/ubuntu/venv/bin/python -W ignore infra/rtt_probe.py collect
