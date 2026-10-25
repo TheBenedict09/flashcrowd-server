@@ -307,7 +307,14 @@ def live_forecasts(limit: int = Query(20, ge=1, le=200)):
 def live_scorecard():
     if SCORECARD_FILE.exists():                                   # written every 15 min by PC3's `flashcrowd scorecard`
         try:
-            return json.loads(SCORECARD_FILE.read_text(encoding="utf-8"))
+            sc = json.loads(SCORECARD_FILE.read_text(encoding="utf-8"))
+            # PC3 counts quiet (correctly-not-alerted) forecasts in `checked`; the contract/frontend expect
+            # checked = hits + misses + false_alarms. Keep the quiet count separately instead of dropping it.
+            h, m, fa = int(sc.get("hits", 0)), int(sc.get("misses", 0)), int(sc.get("false_alarms", 0))
+            sc["quiet_correct"] = max(0, int(sc.get("checked", 0)) - (h + m + fa))
+            sc["checked"] = h + m + fa
+            sc["rows"] = [r for r in sc.get("rows", []) if r.get("outcome") in ("hit", "miss", "false_alarm")][:200]
+            return sc
         except ValueError:
             pass
     return mock("scorecard.json")
