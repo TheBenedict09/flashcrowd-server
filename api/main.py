@@ -288,6 +288,25 @@ def latest_forecasts(limit):
     out = [{"issued_at": _iso(r[0]), "wiki": r[1], "title": r[2], "region": r[3], "horizon_h": int(r[4]),
             "p_surge": round(float(r[5]), 4), "size_q50": float(r[6] or 0), "size_q90": float(r[7] or 0), "cause": r[8],
             "top_reasons": json.loads(r[9]) if isinstance(r[9], str) else (r[9] or [])} for r in rows]
+    if out:                                                      # Snowflake-summarised, Gemini-classified causes
+        try:
+            with connect() as conn:
+                labs = conn.cursor().execute("""
+                    SELECT wiki, title, cause, reason FROM (
+                        SELECT ts, wiki, title, cause, reason FROM CAUSE_LABELS
+                        UNION ALL SELECT ts, wiki, title, cause, reason FROM CAUSE_EXPLAIN)
+                    WHERE ts <= %s AND ts > DATEADD(hour, -3, %s::TIMESTAMP_NTZ)
+                    QUALIFY ROW_NUMBER() OVER (PARTITION BY wiki, title ORDER BY ts DESC) = 1""",
+                    (rows[0][0], rows[0][0])).fetchall()
+            lab = {(w, t): (c, r) for w, t, c, r in labs}
+            for f in out:
+                c, r = lab.get((f["wiki"], f["title"]), (None, None))
+                if not f["cause"] and c:
+                    f["cause"] = c
+                if r:
+                    f["top_reasons"] = [f"Why: {r}"] + list(f["top_reasons"])[:3]
+        except Exception as e:
+            print("cause labels skipped:", e)
     LIVE_CACHE["fc"] = (time.time(), out)
     return out[:limit]
 

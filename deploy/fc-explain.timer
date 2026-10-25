@@ -1,0 +1,7 @@
+[Unit]
+Description=Explain live alerts a few minutes after each live forecast
+[Timer]
+OnCalendar=*:06/15
+Persistent=true
+[Install]
+WantedBy=timers.target

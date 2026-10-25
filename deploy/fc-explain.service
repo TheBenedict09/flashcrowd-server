@@ -1,0 +1,9 @@
+[Unit]
+Description=FLASHCROWD: explain live alerts (Snowflake AI_SUMMARIZE_AGG + Gemini) -> CAUSE_EXPLAIN
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/flashcrowd-server
+Environment=PYTHONWARNINGS=ignore PYTHONUNBUFFERED=1
+ExecStart=/home/ubuntu/venv/bin/python -m pipeline.cause_explain
+TimeoutStartSec=300
