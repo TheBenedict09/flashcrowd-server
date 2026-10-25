@@ -41,6 +41,25 @@ How you work:
 
 FIRST = "FLASHCROWD on-call here. Ask me what's about to surge, why, or how many servers I'd start right now."
 
+# small, on-theme floating mic (FLASHCROWD neon on ink)
+WIDGET = {
+    "variant": "tiny", "placement": "bottom-right", "expandable": "never",
+    "avatar": {"type": "orb", "color_1": "#38f3ff", "color_2": "#ff4fd8"},
+    "feedback_mode": "none", "show_conversation_id": False, "show_avatar_when_collapsed": True, "disable_banner": True,
+    "bg_color": "#0e0530", "text_color": "#ece8ff", "btn_color": "#3dff8b", "btn_text_color": "#07021a",
+    "border_color": "#ff4fd8", "focus_color": "#38f3ff", "border_radius": 14, "btn_radius": 10,
+    "action_text": "Ask FLASHCROWD", "start_call_text": "Talk", "end_call_text": "End",
+    "listening_text": "Listening…", "speaking_text": "On-call speaking",
+    "text_contents": {"main_label": "FLASHCROWD on-call", "start_call": "Talk", "end_call": "End",
+                      "listening_status": "Listening…", "speaking_status": "Speaking", "connecting_status": "Connecting…",
+                      "input_placeholder": "Ask about surges, causes, servers…"},
+    "styles": {"base": "#0e0530", "base_hover": "#1a0b4a", "base_active": "#24105f", "base_border": "#ff4fd8",
+               "base_subtle": "#b4abd8", "base_primary": "#ece8ff", "base_error": "#ff3b5c", "accent": "#3dff8b",
+               "accent_hover": "#5cffa0", "accent_active": "#2be078", "accent_border": "#3dff8b", "accent_subtle": "#1f6b45",
+               "accent_primary": "#07021a", "button_radius": 10, "input_radius": 10, "bubble_radius": 12, "sheet_radius": 16,
+               "compact_sheet_radius": 14, "dropdown_sheet_radius": 12, "overlay_padding": 16},
+}
+
 TOOLS = [
     {"type": "webhook", "name": "get_briefing",
      "description": "Live FLASHCROWD briefing: top surge alerts (article, region, probability, cause, why), next hours per "
@@ -77,7 +96,7 @@ def main():
             "conversation": {"max_duration_seconds": 180},
         }
         body = {"name": "FLASHCROWD on-call", "conversation_config": conf,
-                "platform_settings": {"widget": {"variant": "compact", "avatar": {"type": "orb", "color_1": "#38f3ff", "color_2": "#ff4fd8"}}}}
+                "platform_settings": {"widget": WIDGET}}
         aid = os.getenv("ELEVENLABS_AGENT_ID", "")
         r = c.get(f"{API}/convai/agents/{aid}", headers=h) if aid else None
         if r is not None and r.status_code == 200:
