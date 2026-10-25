@@ -339,6 +339,81 @@ def live_scorecard():
     return mock("scorecard.json")
 
 
+# ---------- voice agent tools (ElevenLabs Conversational AI calls these as webhook tools)
+CAP_RPS = 254          # measured: one server sustains 254 req/s at p95 < 200 ms (558 KB page)
+REGION_NAME = {"LDN": "London", "NJ": "New Jersey", "TYO": "Tokyo"}
+
+
+def _region_plan():
+    hit = LIVE_CACHE.get("rplan")
+    if hit and time.time() - hit[0] < 60:
+        return hit[1]
+    import sys
+    sys.path.insert(0, str(ROOT.parent))
+    from pipeline.sf import connect
+    with connect() as conn:
+        rows = conn.cursor().execute("""
+            SELECT region, target_hour, q50_views, q90_views, issued_at FROM REGION_FORECASTS
+            WHERE issued_at = (SELECT MAX(issued_at) FROM REGION_FORECASTS) ORDER BY region, target_hour""").fetchall()
+    out = {}
+    for reg, th, q50, q90, ia in rows:
+        out.setdefault(reg, []).append({"hour_utc": _iso(th)[11:16], "views_q50": int(q50 or 0), "views_q90": int(q90 or 0),
+                                        "servers_at_q90": max(1, -(-int(q90 or 0) // (CAP_RPS * 3600)))})
+    LIVE_CACHE["rplan"] = (time.time(), out)
+    return out
+
+
+def _alerts(n=6):
+    rows = []
+    try:
+        rows = [clean_forecast(r) for r in latest_forecasts(40)]
+    except Exception as e:
+        print("agent alerts:", e)
+    out = []
+    for f in rows[:n]:
+        why = next((r[5:] for r in f["top_reasons"] if r.startswith("Why: ")), None)
+        out.append({"article": f["title"].replace("_", " "), "wiki": f["wiki"], "region": REGION_NAME.get(f["region"], f["region"]),
+                    "surge_probability_pct": round(f["p_surge"] * 100), "within_hours": f["horizon_h"], "cause": f["cause"],
+                    "why_editors_are_busy": why, "model_reasons": [r for r in f["top_reasons"] if not r.startswith("Why: ")][:2]})
+    return out
+
+
+@app.get("/api/agent/briefing")
+def agent_briefing():
+    """Everything the voice agent needs in one call: top alerts, per-region plan, live scorecard, key facts."""
+    try:
+        plan = _region_plan()
+    except Exception as e:
+        print("agent plan:", e); plan = {}
+    sc = live_scorecard()
+    h, m = int(sc.get("hits", 0)), int(sc.get("misses", 0))
+    return {
+        "now_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+        "top_alerts": _alerts(),
+        "regions": {REGION_NAME[r]: {"next_hours": v[:3]} for r, v in plan.items() if r in REGION_NAME},
+        "scorecard_since": sc.get("since"), "surges_caught_in_advance": h, "surges_missed": m,
+        "share_caught_pct": round(100 * h / (h + m)) if h + m else None, "false_alarms": int(sc.get("false_alarms", 0)),
+        "facts": {"server_capacity_req_per_s": CAP_RPS, "boot_minutes": {"London": 0.87, "New Jersey": 0.83, "Tokyo": 1.18},
+                  "offline_pr_auc_2h": 0.067, "persistence_baseline_pr_auc": 0.006, "median_warning_hours": 2.0,
+                  "planning_percentile": 91, "outage_vs_idle_cost": 10,
+                  "data": "1.3M+ live Wikipedia edits, ~28M hourly page-view rows, 10 wikis mapped to 3 regions"},
+    }
+
+
+@app.get("/api/agent/region")
+def agent_region(region: str = Query(..., description="London, New Jersey or Tokyo (or LDN, NJ, TYO)")):
+    key = {"london": "LDN", "ldn": "LDN", "new jersey": "NJ", "nj": "NJ", "newjersey": "NJ", "tokyo": "TYO", "tyo": "TYO"}.get(region.strip().lower())
+    if not key:
+        raise ApiError(400, "bad_region", "region must be London, New Jersey or Tokyo")
+    try:
+        plan = _region_plan().get(key, [])
+    except Exception:
+        plan = []
+    return {"region": REGION_NAME[key], "next_hours": plan[:6],
+            "alerts_here": [a for a in _alerts(40) if a["region"] == REGION_NAME[key]][:5],
+            "note": "servers_at_q90 = 90th-percentile forecast views per hour / (254 req/s x 3600), one request per view"}
+
+
 @app.get("/api/agent/reasons")
 def agent_reasons(region: str = Query(...)):
     if region not in REGIONS:
