@@ -101,6 +101,7 @@ class Control(BaseModel):
 
 class TTS(BaseModel):
     text: str
+    voice: str | None = None        # None = alert voice; "caster" = the arcade commentator (reads Gemini headlines)
 
 
 # ---------- routes ----------
@@ -424,17 +425,32 @@ def agent_reasons(region: str = Query(...)):
     return {**r, "region": region}
 
 
+TTS_VOICES = {"caster": "TX3LPaxmHKxFdv7VOQHJ"}       # Liam: same commentator voice as the cached arcade lines
+TTS_DAILY_CHARS = int(os.getenv("FC_TTS_DAILY_CHARS", "3000"))
+TTS_SPENT: dict = {}
+
+
 @app.post("/api/voice/tts")
 async def tts(body: TTS):
     text = body.text.strip()[:200]
     if not text:
         raise ApiError(400, "empty_text", "text is required")
     key, voice = os.getenv("ELEVENLABS_API_KEY", ""), os.getenv("ELEVENLABS_VOICE_ID", "")
+    if body.voice == "caster":
+        voice = TTS_VOICES["caster"]
+    elif body.voice:
+        raise ApiError(400, "bad_voice", "voice must be omitted or 'caster'")
+    day = time.strftime("%Y-%m-%d")                     # protect the free plan: cap fresh characters per day
+    if TTS_SPENT.get("day") != day:
+        TTS_SPENT.clear(); TTS_SPENT.update(day=day, chars=0)
     if not key or key == "..." or not voice or voice == "...":
         raise ApiError(503, "tts_not_configured", "ElevenLabs key/voice not set on the server yet.")
     CACHE.mkdir(parents=True, exist_ok=True)
     f = CACHE / (hashlib.sha256(f"{voice}:{text}".encode()).hexdigest() + ".mp3")
     if not f.exists():
+        if TTS_SPENT["chars"] + len(text) > TTS_DAILY_CHARS:
+            raise ApiError(429, "tts_budget", "Daily voice budget used up; cached lines still play.")
+        TTS_SPENT["chars"] += len(text)
         async with httpx.AsyncClient(timeout=30) as c:
             r = await c.post(f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
                              headers={"xi-api-key": key, "accept": "audio/mpeg"},

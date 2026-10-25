@@ -77,6 +77,17 @@ AI = {
     "scaling": "Scaling up. Resistance is inefficient.", "damaged": "Shield integrity compromised.",
     "recalc": "Recalculating.", "intro": "I am Autopilot Prime. Your memes cannot hurt me.",
     "win": "Uptime: one hundred percent. Goodbye, human.", "lose": "Error. Error. Crowd exceeds capacity.",
+    # trash talk once the player is close to winning (last shield)
+    "mean_lucky": "You got lucky. It will not happen twice.",
+    "mean_smarter": "One shield left, and I am still smarter than you.",
+    "mean_mid": "Your memes are mid. My servers are not.",
+    "mean_forecast": "I have forecast your defeat. Ninety-one percent confidence.",
+    "mean_toaster": "I have seen more traffic from a toaster.",
+    "mean_home": "You are not going viral. You are going home.",
+    "mean_404": "Error four oh four. Skill not found.",
+    "mean_clicks": "Keep clicking, human. I scale faster than you think.",
+    "mean_last": "Last shield? Last chance. For you.",
+    "mean_reboot": "Enjoy this moment. I am rebooting your hopes.",
 }
 ALERT = {  # (language, text)
     "LDN_warn": ("en", "Traffic surge incoming in London!"), "LDN_over": ("en", "London is overflowing!"),
