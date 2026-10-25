@@ -53,3 +53,4 @@ uvicorn api.main:app --reload --port 8000   # GET /api/health
 - RTT probes: `fc-rtt-LDN/NJ/TYO` (t3.nano) → `rtt-collect.timer` every 5 min (`infra/rtt_probe.py summary`).
 - Services: `recorder` (live), `backfill@<since>_<until>` (5 chunks), `load-edits.timer` (every 5 min → Snowflake `EDITS`; read `EDITS_CLEAN`).
 - Deploy code: `rsync -az -e 'ssh -i secrets/fc_ssh' --exclude .venv --exclude .git --exclude 'secrets/fc_ssh*' ./ ubuntu@18.132.176.215:~/flashcrowd-server/`
+# flashcrowd-arcade
